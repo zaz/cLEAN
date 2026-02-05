@@ -368,6 +368,20 @@ def addIntInequality (p : MetaProblem) (h y : Expr) : OmegaM MetaProblem := do
     problem := ← (p.problem.addInequality lc.const lc.coeffs
       (some do mkAppM ``le_of_le_of_eq #[h, (← prf)])) |>.solveEqualities }
 
+/--
+Try to synthesize a `Decidable P` instance for the given proposition `P`.
+If synthesis succeeds, return the instance. Otherwise, fall back to `Classical.propDecidable P`.
+
+This allows omega to produce constructive proofs when the propositions involved
+have decidable instances (e.g., `Nat` equalities and inequalities), while still
+supporting arbitrary propositions via classical logic when needed.
+-/
+def mkDecidableInst (P : Expr) : MetaM Expr := do
+  let instType := mkApp (.const ``Decidable []) P
+  match ← trySynthInstance instType with
+  | .some inst => return inst
+  | _ => return mkApp (.const ``Classical.propDecidable []) P
+
 /-- Given a fact `h` with type `¬ P`, return a more useful fact obtained by pushing the negation. -/
 def pushNot (h P : Expr) : MetaM (Option Expr) := do
   let P ← whnfR P
@@ -376,7 +390,7 @@ def pushNot (h P : Expr) : MetaM (Option Expr) := do
   | .forallE _ t b _ =>
     if (← isProp t) && (← isProp b) then
      return some (mkApp4 (.const ``Decidable.and_not_of_not_imp []) t b
-      (.app (.const ``Classical.propDecidable []) t) h)
+      (← mkDecidableInst t) h)
     else
       return none
   | .app _ _ =>
@@ -405,17 +419,17 @@ def pushNot (h P : Expr) : MetaM (Option Expr) := do
     | Prod.Lex _ _ _ _ _ _ => return some (← mkAppM ``Prod.of_not_lex #[h])
     | Not P =>
       return some (mkApp3 (.const ``Decidable.of_not_not []) P
-        (.app (.const ``Classical.propDecidable []) P) h)
+        (← mkDecidableInst P) h)
     | And P Q =>
       return some (mkApp5 (.const ``Decidable.or_not_not_of_not_and []) P Q
-        (.app (.const ``Classical.propDecidable []) P)
-        (.app (.const ``Classical.propDecidable []) Q) h)
+        (← mkDecidableInst P)
+        (← mkDecidableInst Q) h)
     | Or P Q =>
       return some (mkApp3 (.const ``and_not_not_of_not_or []) P Q h)
     | Iff P Q =>
       return some (mkApp5 (.const ``Decidable.and_not_or_not_and_of_not_iff []) P Q
-        (.app (.const ``Classical.propDecidable []) P)
-        (.app (.const ``Classical.propDecidable []) Q) h)
+        (← mkDecidableInst P)
+        (← mkDecidableInst Q) h)
     | _ => return none
   | _ => return none
 
@@ -432,7 +446,7 @@ partial def addFact (p : MetaProblem) (h : Expr) : OmegaM (MetaProblem × Nat) :
     | .forallE _ x y _ =>
       if ← pure t.isArrow <&&> isProp x <&&> isProp y then
         p.addFact (mkApp4 (.const ``Decidable.not_or_of_imp []) x y
-          (.app (.const ``Classical.propDecidable []) x) h)
+          (← mkDecidableInst x) h)
       else
         trace[omega] "rejecting forall: it's not an arrow, or not propositional"
         return (p, 0)
@@ -498,7 +512,7 @@ partial def addFact (p : MetaProblem) (h : Expr) : OmegaM (MetaProblem × Nat) :
         p.addFact (mkApp3 (.const ``Subtype.property [← getLevel α]) α P h)
       | Iff P₁ P₂ =>
         p.addFact (mkApp4 (.const ``Decidable.and_or_not_and_not_of_iff [])
-          P₁ P₂ (.app (.const ``Classical.propDecidable []) P₂) h)
+          P₁ P₂ (← mkDecidableInst P₂) h)
       | Or _ _ =>
         if (← cfg).splitDisjunctions then
           return ({ p with disjunctions := p.disjunctions.insert h }, 1)
