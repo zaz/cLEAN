@@ -407,6 +407,7 @@ theorem count_erase {a b : α} :
     ∀ {l : List α}, count a (l.erase b) = count a l - if b == a then 1 else 0
   | [] => by simp
   | c :: l => by
+    letI := instDecidableEqOfLawfulBEq (α := α)
     rw [erase_cons]
     if hc : c = b then
       have hc_beq := beq_iff_eq.mpr hc

@@ -630,6 +630,7 @@ theorem flatten_sublist_iff {L : List (List α)} {l} :
 
 @[simp, grind =] theorem isSublist_iff_sublist [BEq α] [LawfulBEq α] {l₁ l₂ : List α} :
     l₁.isSublist l₂ ↔ l₁ <+ l₂ := by
+  letI := instDecidableEqOfLawfulBEq (α := α)
   cases l₁ <;> cases l₂ <;> simp [isSublist]
   case cons.cons hd₁ tl₁ hd₂ tl₂ =>
     if h_eq : hd₁ = hd₂ then
@@ -975,7 +976,9 @@ theorem prefix_iff_getElem? {l₁ l₂ : List α} :
   | cons a l₁ ih =>
     cases l₂ with
     | nil =>
-      simpa using ⟨0, by simp⟩
+      refine iff_of_false (by simp) (fun h => ?_)
+      have := h 0 (by simp)
+      simp at this
     | cons b l₂ =>
       simp only [cons_prefix_cons, ih]
       rw (occs := [2]) [← Nat.and_forall_add_one]

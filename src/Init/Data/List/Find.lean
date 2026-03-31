@@ -811,6 +811,7 @@ theorem findIdx?_eq_guard_findIdx_lt {xs : List α} {p : α → Bool} :
     simp only [findIdx?_eq_some_iff_findIdx_eq] at h
     simp [h]
 
+attribute [-simp] Classical.not_forall in
 theorem findIdx?_eq_some_iff_getElem {xs : List α} {p : α → Bool} {i : Nat} :
     xs.findIdx? p = some i ↔
       ∃ h : i < xs.length, p xs[i] ∧ ∀ j (hji : j < i), ¬p (xs[j]'(Nat.lt_trans hji h)) := by
@@ -823,10 +824,11 @@ theorem findIdx?_eq_some_iff_getElem {xs : List α} {p : α → Bool} {i : Nat} 
       cases i with
       | zero => simp_all
       | succ i =>
-        simp only [zero_ne_add_one, getElem_cons_succ, false_iff, not_exists,
-          not_and, Classical.not_forall, Bool.not_eq_false]
-        intros
-        refine ⟨0, zero_lt_succ i, ‹_›⟩
+        simp only [zero_ne_add_one, getElem_cons_succ, false_iff, length_cons]
+        rintro ⟨_, _, hj⟩
+        have h1 := hj 0 (Nat.zero_lt_succ _)
+        simp only [getElem_cons_zero, ‹p x = true›] at h1
+        exact absurd h1 (by decide)
     · simp only [Option.map_eq_some_iff, ih, Bool.not_eq_true, length_cons]
       constructor
       · rintro ⟨a, ⟨⟨h, h₁, h₂⟩, rfl⟩⟩

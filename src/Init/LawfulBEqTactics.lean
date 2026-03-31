@@ -8,7 +8,6 @@ module
 prelude
 public import Init.Core
 import Init.Data.Bool
-import Init.ByCases
 import Init.Classical
 
 public section
@@ -35,26 +34,18 @@ theorem deriving_lawful_beq_helper_dep {x y : α} [BEq α] [ReflBEq α]
     (k : (h : x = y) → t (h ▸ ReflBEq.rfl) = true → P) :
     (if h : (x == y) then t h else false) = true → P := by
   intro h
-  by_cases hxy : x = y
-  · subst hxy
-    apply k rfl
-    rw [dif_pos (BEq.refl x)] at h
-    exact h
-  · by_cases hxy' : x == y
-    · exact False.elim <| hxy (inst hxy')
-    · rw [dif_neg hxy'] at h
-      contradiction
+  split at h
+  · next hbeq =>
+    have hxy := inst hbeq
+    subst hxy
+    exact k rfl h
+  · contradiction
 
 theorem deriving_lawful_beq_helper_nd {x y : α} [BEq α] [ReflBEq α]
     {P : Prop}
     (inst : (x == y) = true → x = y)
     (k : x = y → P) :
-    (x == y) = true → P := by
-  intro h
-  by_cases hxy : x = y
-  · subst hxy
-    apply k rfl
-  · exact False.elim <| hxy (inst h)
+    (x == y) = true → P := fun h => k (inst h)
 
 end DerivingHelpers
 

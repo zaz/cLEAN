@@ -7678,8 +7678,7 @@ theorem isEmpty_filterMap_eq_false [BEq α] [LawfulBEq α] {f : (a : α) → β 
     {l : List ((a : α) × β a)} (distinct : DistinctKeys l) :
     (l.filterMap fun p => (f p.1 p.2).map (fun x => (⟨p.1, x⟩ : (a : α) × γ a))).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), (f k (getValueCast k l h)).isSome := by
-  rw [Bool.eq_false_iff, Ne.eq_1, isEmpty_filterMap_eq_true distinct]
-  simp [Option.ne_none_iff_isSome]
+  simp only [isEmpty_eq_false_iff_exists_containsKey, containsKey_filterMap_iff distinct]
 
 theorem isEmpty_filter_eq_true [BEq α] [LawfulBEq α] {f : (a : α) → β a → Bool}
     {l : List ((a : α) × β a)} (distinct : DistinctKeys l) :
@@ -7692,8 +7691,7 @@ theorem isEmpty_filter_eq_false [BEq α] [LawfulBEq α] {f : (a : α) → β a �
     {l : List ((a : α) × β a)} (distinct : DistinctKeys l) :
     (l.filter fun p => (f p.1 p.2)).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), f k (getValueCast k l h) = true := by
-  rw [← Bool.not_eq_true, isEmpty_filter_eq_true distinct]
-  simp
+  simp only [isEmpty_eq_false_iff_exists_containsKey, containsKey_filter_iff distinct]
 
 theorem isEmpty_filter_key_iff [BEq α] [EquivBEq α] {f : α → Bool}
     {l : List ((a : α) × β a)} (hl : DistinctKeys l) :
@@ -8081,8 +8079,7 @@ theorem isEmpty_filterMap_eq_false [BEq α] [EquivBEq α] {β : Type v} {γ : Ty
     {f : (_ : α) → β → Option γ} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :
     (l.filterMap fun p => (f p.1 p.2).map (fun x => (⟨p.1, x⟩ : (_ : α) × γ))).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), (f (getKey k l h) (getValue k l h)).isSome := by
-  rw [Bool.eq_false_iff, ne_eq, isEmpty_filterMap_eq_true distinct]
-  simp only [Classical.not_forall, Option.ne_none_iff_isSome]
+  simp only [isEmpty_eq_false_iff_exists_containsKey, Const.containsKey_filterMap_iff distinct]
 
 theorem isEmpty_filter_eq_true [BEq α] [EquivBEq α] {β : Type v}
     {f : (_ : α) → β → Bool} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :
@@ -8095,8 +8092,7 @@ theorem isEmpty_filter_eq_false [BEq α] [EquivBEq α] {β : Type v}
     {f : (_ : α) → β → Bool} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :
     (l.filter fun p => (f p.1 p.2)).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), f (getKey k l h) (getValue k l h) = true := by
-  rw [Bool.eq_false_iff, ne_eq, isEmpty_filter_eq_true distinct]
-  simp only [Classical.not_forall, Bool.not_eq_false]
+  simp only [isEmpty_eq_false_iff_exists_containsKey, Const.containsKey_filter_iff distinct]
 
 theorem isEmpty_filter_key_eq_true [BEq α] [EquivBEq α] {β : Type v}
     {f : (_ : α) → Bool} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :

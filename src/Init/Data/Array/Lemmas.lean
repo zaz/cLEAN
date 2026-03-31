@@ -669,11 +669,6 @@ theorem all_iff_forall {p : α → Bool} {as : Array α} {start stop} :
     as.all p = true ↔ ∀ (i : Nat) (_ : i < as.size), p as[i] := by
   simp [all_iff_forall]
 
-@[simp] theorem all_eq_false {p : α → Bool} {as : Array α} :
-    as.all p = false ↔ ∃ (i : Nat) (_ : i < as.size), ¬p as[i] := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true]
-  simp
-
 @[simp, grind =] theorem all_toList {p : α → Bool} {as : Array α} : as.toList.all p = as.all p := by
   rw [Bool.eq_iff_iff, all_eq_true, List.all_eq_true]
   simp only [List.mem_iff_getElem, getElem_toList]
@@ -682,6 +677,12 @@ theorem all_iff_forall {p : α → Bool} {as : Array α} {start stop} :
     exact w as[i] ⟨i, h, getElem_toList h⟩
   · rintro w x ⟨i, h, rfl⟩
     exact w i h
+
+@[simp] theorem all_eq_false {p : α → Bool} {as : Array α} :
+    as.all p = false ↔ ∃ (i : Nat) (_ : i < as.size), ¬p as[i] := by
+  rw [← all_toList, List.all_eq_false]
+  simp only [List.mem_iff_getElem, getElem_toList, Array.length_toList]
+  exact ⟨fun ⟨_, ⟨i, h, rfl⟩, hp⟩ => ⟨i, h, hp⟩, fun ⟨i, h, hp⟩ => ⟨_, ⟨i, h, rfl⟩, hp⟩⟩
 
 theorem all_eq_true_iff_forall_mem {xs : Array α} : xs.all p ↔ ∀ x, x ∈ xs → p x := by
   simp only [← all_toList, List.all_eq_true, mem_def]
@@ -749,8 +750,8 @@ theorem all_eq_true' {p : α → Bool} {as : Array α} :
 /-- Variant of `all_eq_false` in terms of membership rather than an array index. -/
 theorem all_eq_false' {p : α → Bool} {as : Array α} :
     as.all p = false ↔ ∃ x, x ∈ as ∧ ¬p x := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true']
-  simp
+  rw [← all_toList, List.all_eq_false]
+  simp only [mem_def]
 
 @[grind =]
 theorem any_eq {xs : Array α} {p : α → Bool} : xs.any p = decide (∃ i : Nat, ∃ h, p (xs[i]'h)) := by
@@ -769,21 +770,13 @@ theorem any_eq' {xs : Array α} {p : α → Bool} : xs.any p = decide (∃ x, x 
 
 @[grind =]
 theorem all_eq {xs : Array α} {p : α → Bool} : xs.all p = decide (∀ i, (_ : i < xs.size) → p xs[i]) := by
-  by_cases h : xs.all p
-  · simp_all [all_eq_true]
-  · simp only [Bool.not_eq_true] at h
-    simp only [h]
-    simp only [all_eq_false] at h
-    simpa using h
+  rw [Bool.eq_iff_iff, decide_eq_true_eq]
+  exact all_eq_true
 
 /-- Variant of `all_eq` in terms of membership rather than an array index. -/
 theorem all_eq' {xs : Array α} {p : α → Bool} : xs.all p = decide (∀ x, x ∈ xs → p x) := by
-  by_cases h : xs.all p
-  · simp_all [all_eq_true', -all_eq_true]
-  · simp only [Bool.not_eq_true] at h
-    simp only [h]
-    simp only [all_eq_false'] at h
-    simpa using h
+  rw [Bool.eq_iff_iff, decide_eq_true_eq]
+  exact all_eq_true'
 
 theorem decide_exists_mem {xs : Array α} {p : α → Prop} [DecidablePred p] :
     decide (∃ x, x ∈ xs ∧ p x) = xs.any p := by
@@ -2136,7 +2129,13 @@ theorem empty_eq_flatten_iff {xss : Array (Array α)} : #[] = xss.flatten ↔ �
   simp
 
 theorem flatten_ne_empty_iff {xss : Array (Array α)} : xss.flatten ≠ #[] ↔ ∃ xs, xs ∈ xss ∧ xs ≠ #[] := by
-  simp
+  constructor
+  · intro h
+    have ⟨x, hx⟩ := exists_mem_of_ne_empty _ h
+    have ⟨xs, hm, hx'⟩ := mem_flatten.mp hx
+    exact ⟨xs, hm, fun heq => by simp [heq] at hx'⟩
+  · rintro ⟨xs, hm, hne⟩ heq
+    exact hne (flatten_eq_empty_iff.mp heq xs hm)
 
 theorem exists_of_mem_flatten : x ∈ flatten xss → ∃ xs, xs ∈ xss ∧ x ∈ xs := mem_flatten.1
 

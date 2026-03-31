@@ -1166,11 +1166,9 @@ protected theorem pow_le_pow_of_le {a n m : Nat} (h : 1 < a) (w : n ≤ m) : a ^
 protected theorem pow_le_pow_iff_right {a n m : Nat} (h : 1 < a) :
     a ^ n ≤ a ^ m ↔ n ≤ m := by
   constructor
-  · apply Decidable.by_contra
-    intro w
-    simp at w
-    apply Nat.lt_irrefl (a ^ n)
-    exact Nat.lt_of_le_of_lt w.1 (Nat.pow_lt_pow_of_lt h w.2)
+  · intro h_le
+    exact Nat.le_of_not_lt fun h_lt =>
+      Nat.lt_irrefl _ (Nat.lt_of_le_of_lt h_le (Nat.pow_lt_pow_of_lt h h_lt))
   · intro w
     cases Nat.eq_or_lt_of_le w
     case inl eq => subst eq; apply Nat.le_refl
@@ -1179,11 +1177,9 @@ protected theorem pow_le_pow_iff_right {a n m : Nat} (h : 1 < a) :
 protected theorem pow_lt_pow_iff_right {a n m : Nat} (h : 1 < a) :
     a ^ n < a ^ m ↔ n < m := by
   constructor
-  · apply Decidable.by_contra
-    intro w
-    simp at w
-    apply Nat.lt_irrefl (a ^ n)
-    exact Nat.lt_of_lt_of_le w.1 (Nat.pow_le_pow_of_le h w.2)
+  · intro h_lt
+    exact Nat.lt_of_not_le fun h_le =>
+      Nat.lt_irrefl _ (Nat.lt_of_lt_of_le h_lt (Nat.pow_le_pow_of_le h h_le))
   · intro w
     exact Nat.pow_lt_pow_of_lt h w
 

@@ -355,6 +355,7 @@ theorem erase_eq_eraseP' (a : α) (l : List α) : l.erase a = l.eraseP (· == a)
 theorem erase_eq_eraseP [LawfulBEq α] (a : α) : ∀ (l : List α), l.erase a = l.eraseP (a == ·)
   | [] => rfl
   | b :: l => by
+    letI := instDecidableEqOfLawfulBEq (α := α)
     if h : a = b then simp [h] else simp [h, Ne.symm h, erase_eq_eraseP (l := l)]
 
 @[simp] theorem erase_eq_nil_iff [LawfulBEq α] {xs : List α} {a : α} :
@@ -420,6 +421,7 @@ theorem mem_of_mem_erase {a b : α} {l : List α} (h : a ∈ l.erase b) : a ∈ 
 @[grind _=_]
 theorem erase_filter [LawfulBEq α] {f : α → Bool} {l : List α} :
     (filter f l).erase a = filter f (l.erase a) := by
+  letI := instDecidableEqOfLawfulBEq (α := α)
   induction l with
   | nil => rfl
   | cons x xs ih =>
@@ -503,6 +505,7 @@ theorem Pairwise.erase [LawfulBEq α] {l : List α} (a) : Pairwise p l → Pairw
   Pairwise.sublist <| erase_sublist
 
 theorem Nodup.erase_eq_filter [LawfulBEq α] {l} (d : Nodup l) (a : α) : l.erase a = l.filter (· != a) := by
+  letI := instDecidableEqOfLawfulBEq (α := α)
   induction d with
   | nil => rfl
   | cons m _n ih =>

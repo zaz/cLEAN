@@ -1116,8 +1116,8 @@ theorem all_eq_not_any_not {p : α → Bool} {xs : Vector α n} :
 
 @[simp] theorem all_eq_false {p : α → Bool} {xs : Vector α n} :
     xs.all p = false ↔ ∃ (i : Nat) (_ : i < n), ¬p xs[i] := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true]
-  simp
+  rcases xs with ⟨xs, rfl⟩
+  simp only [all_mk, Array.all_eq_false, getElem_mk]
 
 theorem all_eq_true_iff_forall_mem {xs : Vector α n} : xs.all p ↔ ∀ x, x ∈ xs → p x := by
   rcases xs with ⟨xs, rfl⟩
@@ -1169,12 +1169,8 @@ theorem any_eq' {xs : Vector α n} {p : α → Bool} : xs.any p = decide (∃ x,
 
 @[grind =]
 theorem all_eq {xs : Vector α n} {p : α → Bool} : xs.all p = decide (∀ i, (_ : i < n) → p xs[i]) := by
-  by_cases h : xs.all p
-  · simp_all [all_eq_true]
-  · simp only [Bool.not_eq_true] at h
-    simp only [h]
-    simp only [all_eq_false] at h
-    simpa using h
+  rw [Bool.eq_iff_iff, decide_eq_true_eq]
+  exact all_eq_true
 
 /-- Variant of `all_eq` in terms of membership rather than an array index. -/
 theorem all_eq' {xs : Vector α n} {p : α → Bool} : xs.all p = decide (∀ x, x ∈ xs → p x) := by

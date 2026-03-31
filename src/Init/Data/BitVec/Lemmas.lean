@@ -1798,8 +1798,9 @@ theorem extractLsb_not_of_lt {x : BitVec w} {hi lo : Nat} (hlo : lo ≤ hi) (hhi
 
 @[simp]
 theorem ne_not_self {a : BitVec w} (h : 0 < w) : a ≠ ~~~a := by
-  have : ∃ x, x < w := ⟨w - 1, by omega⟩
-  simp [BitVec.eq_of_getElem_eq_iff, this]
+  intro heq
+  have := BitVec.eq_of_getElem_eq_iff.mp heq (w - 1) (by omega)
+  simp at this
 
 @[simp]
 theorem not_self_ne {a : BitVec w} (h : 0 < w) : ~~~a ≠ a := by

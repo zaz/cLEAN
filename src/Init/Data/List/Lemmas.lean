@@ -394,7 +394,11 @@ theorem exists_mem_of_ne_nil (l : List α) (h : l ≠ []) : ∃ x, x ∈ l :=
   exists_mem_of_length_pos (length_pos_iff.2 h)
 
 theorem eq_nil_iff_forall_not_mem {l : List α} : l = [] ↔ ∀ a, a ∉ l := by
-  cases l <;> simp [-not_or]
+  constructor
+  · rintro rfl; simp
+  · intro h; cases l with
+    | nil => rfl
+    | cons x _ => exact absurd (.head _) (h x)
 
 @[simp] theorem mem_dite_nil_left {x : α} [Decidable p] {l : ¬ p → List α} :
     (x ∈ if h : p then [] else l h) ↔ ∃ h : ¬ p, x ∈ l h := by
@@ -580,7 +584,11 @@ theorem decide_forall_mem {l : List α} {p : α → Prop} [DecidablePred p] :
   simp [any_eq]
 
 @[simp] theorem all_eq_false {l : List α} : l.all p = false ↔ ∃ x, x ∈ l ∧ ¬p x := by
-  simp [all_eq]
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [all_cons, Bool.and_eq_false_iff]
+    simp only [mem_cons, exists_eq_or_imp, Bool.eq_false_iff, ih]
 
 theorem any_beq [BEq α] {l : List α} {a : α} : (l.any fun x => a == x) = l.contains a := by
   induction l <;> simp_all [contains_cons]
@@ -1912,7 +1920,19 @@ theorem nil_eq_flatten_iff {L : List (List α)} : [] = L.flatten ↔ ∀ l ∈ L
   simp
 
 theorem flatten_ne_nil_iff {xss : List (List α)} : xss.flatten ≠ [] ↔ ∃ xs, xs ∈ xss ∧ xs ≠ [] := by
-  simp
+  induction xss with
+  | nil => simp
+  | cons xs xss ih =>
+    constructor
+    · intro h
+      cases xs with
+      | nil =>
+        rw [flatten_cons, nil_append] at h
+        obtain ⟨ys, hm, hne⟩ := ih.mp h
+        exact ⟨ys, mem_cons_of_mem _ hm, hne⟩
+      | cons a t => exact ⟨a :: t, mem_cons_self, cons_ne_nil _ _⟩
+    · rintro ⟨xs, hm, hne⟩ heq
+      exact hne (flatten_eq_nil_iff.mp heq xs hm)
 
 theorem exists_of_mem_flatten : a ∈ flatten L → ∃ l, l ∈ L ∧ a ∈ l := mem_flatten.1
 

@@ -71,9 +71,13 @@ theorem isEqv_eq_decide (xs ys : Array α) (r) :
     simp [h, w]
   · let h' := h
     simp only [Bool.not_eq_true] at h
-    simp only [h, Bool.false_eq, dite_eq_right_iff, decide_eq_false_iff_not, Classical.not_forall,
-      Bool.not_eq_true]
-    simpa [isEqv_iff_rel] using h'
+    simp only [h, Bool.false_eq]
+    split
+    · rename_i hsz
+      simp only [decide_eq_false_iff_not]
+      intro hall
+      exact absurd (isEqv_iff_rel.mpr ⟨hsz, hall⟩) h'
+    · rfl
 
 @[simp, grind =] theorem isEqv_toList [BEq α] (xs ys : Array α) : (xs.toList.isEqv ys.toList r) = (xs.isEqv ys r) := by
   simp [isEqv_eq_decide, List.isEqv_eq_decide, Array.size]; rfl

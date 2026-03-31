@@ -697,8 +697,7 @@ def omegaTactic (cfg : OmegaConfig) : TacticM Unit := do
     if debug.terminalTacticsAsSorry.get (← getOptions) then
       g.admit
     else
-      let some g ← g.falseOrByContra | return ()
-      g.withContext do
+      let runOmega (g : MVarId) : MetaM Unit := g.withContext do
         let type ← g.getType
         let g' ← mkFreshExprSyntheticOpaqueMVar type
         let hyps := (← getLocalHyps).toList
@@ -707,6 +706,24 @@ def omegaTactic (cfg : OmegaConfig) : TacticM Unit := do
         -- Omega proofs are typically rather large, so hide them in a separate definition
         let e ← mkAuxTheorem type (← instantiateMVarsProfiling g') (zetaDelta := true)
         g.assign e
+      -- Prefer the constructive path: `useClassical := some false` uses
+      -- `Decidable.byContradiction` for decidable goals and `False.elim` for
+      -- non-decidable goals, avoiding `Classical.choice`. This succeeds when the
+      -- goal is decidable or the context is already contradictory.
+      --
+      -- For non-decidable goals where omega needs the negated goal as a hypothesis
+      -- (e.g., `P ∨ Q` where omega derives contradiction from `¬Q`), the
+      -- constructive path fails because `False.elim` doesn't introduce `¬(P ∨ Q)`.
+      -- In that case, fall back to the default which may use
+      -- `Classical.byContradiction`.
+      let saved ← saveState
+      try
+        let some g ← g.falseOrByContra (useClassical := some false) | return ()
+        runOmega g
+      catch _ =>
+        restoreState saved
+        let some g ← g.falseOrByContra | return ()
+        runOmega g
 
 /-- The `omega` tactic, for resolving integer and natural linear arithmetic problems. This
 `TacticM Unit` frontend with default configuration can be used as an Aesop rule, for example via

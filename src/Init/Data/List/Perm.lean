@@ -424,6 +424,7 @@ theorem cons_perm_iff_perm_erase {a : α} {l₁ l₂ : List α} :
 
 @[grind =]
 theorem perm_iff_count {l₁ l₂ : List α} : l₁ ~ l₂ ↔ ∀ a, count a l₁ = count a l₂ := by
+  letI := instDecidableEqOfLawfulBEq (α := α)
   refine ⟨Perm.count_eq, fun H => ?_⟩
   induction l₁ generalizing l₂ with
   | nil =>
@@ -465,6 +466,7 @@ grind_pattern Perm.insert => l₁ ~ l₂, l₂.insert a
 
 theorem perm_insert_swap (x y : α) (l : List α) :
     List.insert x (List.insert y l) ~ List.insert y (List.insert x l) := by
+  letI := instDecidableEqOfLawfulBEq (α := α)
   by_cases xl : x ∈ l <;> by_cases yl : y ∈ l <;> simp [xl, yl]
   if xy : x = y then simp [xy] else
   simp [List.insert, xl, yl, xy, Ne.symm xy]

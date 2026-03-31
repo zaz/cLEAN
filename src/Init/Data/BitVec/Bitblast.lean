@@ -205,9 +205,10 @@ theorem carry_succ_one (i : Nat) (x : BitVec w) (h : 0 < w) :
     simp only [getLsbD_one, add_one_ne_zero, decide_false, Bool.and_false, atLeastTwo_false_mid]
     cases hx : x.getLsbD (i+1)
     case false =>
-      have : ∃ j ≤ i + 1, x.getLsbD j = false :=
-        ⟨i+1, by omega, hx⟩
-      simpa
+      simp only [Bool.false_and]
+      symm; rw [decide_eq_false_iff_not]
+      intro hall
+      exact absurd (hall (i + 1) (Nat.le_refl _)) (by simp [hx])
     case true =>
       suffices
           (∀ (j : Nat), j ≤ i → x.getLsbD j = true)

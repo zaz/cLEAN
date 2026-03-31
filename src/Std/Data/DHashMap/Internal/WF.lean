@@ -695,6 +695,7 @@ theorem isHashSelf_updateBucket_alter [BEq α] [Hashable α] [LawfulBEq α] {m :
     IsHashSelf (updateBucket m.1.buckets m.2 a (AssocList.alter a f)) := by
   apply h.buckets_hash_self.updateBucket (fun l p hp => ?_)
   rw [AssocList.toList_alter.mem_iff] at hp
+  letI := instDecidableEqOfLawfulBEq (α := α)
   by_cases h : p.fst = a
   · exact .inr <| congrArg hash h
   · rw [mem_alterKey_of_key_ne _ h] at hp
